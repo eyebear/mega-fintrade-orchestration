@@ -1,256 +1,251 @@
 # Mega Fintrade Orchestration
 
-`mega-fintrade-orchestration` is Project 0 of the Mega Fintrade Platform.
+`mega-fintrade-orchestration` is the top-level orchestration project for the Mega Fintrade Platform.
 
-This project is the top-level control and manual project for running the full Mega Fintrade Platform locally.
+It provides scripts, configuration templates, and documentation for running the full local platform pipeline across the Python quant engine, C++ market engine, Java backend, and .NET risk monitor.
 
-It does not replace the other Mega Fintrade repositories. Instead, it connects them together through scripts, configuration files, and documentation.
+This repository does not replace the individual platform repositories. Instead, it acts as the control layer that connects them into one repeatable end-to-end workflow.
 
 ---
 
-## Project Position
+## Repository Scope
 
-This repository is:
+This repository provides orchestration scripts, configuration templates, and documentation for running the Mega Fintrade Platform locally.
 
-```text
-Project 0 — mega-fintrade-orchestration
-```
+It is designed as a control layer for the platform and does not contain the source code of the individual platform services.
 
-It controls the existing platform projects:
+Each service remains in its own repository.
 
-```text
-Project 1 — mega-fintrade-backend-java
-Project 2 — mega-fintrade-quant-engine
-Project 3 — mega-fintrade-market-engine-cpp
-Project 4 — mega-fintrade-risk-monitor-dotnet
-```
+---
 
-Future AI work will be added later as an optional Project 5 component.
+## Platform Position
+
+This repository controls the following platform components:
+
+| Component | Repository | Main Role |
+|---|---|---|
+| Quant Engine | `mega-fintrade-quant-engine` | Downloads market data, runs quant analytics, and generates portfolio output files |
+| Market Engine | `mega-fintrade-market-engine-cpp` | Processes raw market data, cleans records, and calculates daily returns |
+| Backend Platform | `mega-fintrade-backend-java` | Imports processed CSV outputs, stores portfolio data, and exposes REST APIs |
+| Risk Monitor | `mega-fintrade-risk-monitor-dotnet` | Monitors portfolio risk, evaluates alert rules, and provides dashboard views |
+
+Future AI advisor functionality can be added later as an optional extension, but the core orchestration flow does not depend on AI.
 
 ---
 
 ## Purpose
 
-The purpose of this project is to let the user run the full Mega Fintrade local pipeline with one clear routine.
+The purpose of this project is to make the Mega Fintrade Platform easier to run as one connected system.
 
-The full platform data flow is:
+Instead of manually switching between multiple repositories and copying files by hand, this orchestration project is designed to provide one clear routine for the full local pipeline.
 
-```text
-Python Quant Engine
-        ↓
-C++ Market Engine
-        ↓
-Python Quant Analytics
-        ↓
-Java Backend Import
-        ↓
-.NET Risk Monitor
-        ↓
-Dashboard
-```
+The intended local data flow is:
 
-This project provides the scripts and documentation needed to connect those parts.
+    Python Quant Engine
+            ↓
+    C++ Market Engine
+            ↓
+    Python Quant Analytics
+            ↓
+    Java Backend Import
+            ↓
+    .NET Risk Monitor
+            ↓
+    Dashboard
 
 ---
 
 ## Main Responsibilities
 
-This orchestration project will eventually handle:
+This orchestration project is responsible for coordinating the local platform workflow.
 
-```text
-1. Checking local prerequisites
-2. Running the Python market data ingestion
-3. Moving raw market data into the C++ market engine
-4. Building and running the C++ market engine
-5. Moving C++ output files back into the Python quant engine
-6. Running Python analytics
-7. Moving final CSV outputs into the Java backend
-8. Triggering Java backend import APIs
-9. Triggering .NET risk monitor refresh APIs
-10. Printing the final dashboard URL
-```
+It is designed to handle:
 
----
-
-## Connected Repositories
-
-This project expects the following repositories to exist beside it locally:
-
-```text
-mega-fintrade/
-├── mega-fintrade-orchestration
-├── mega-fintrade-quant-engine
-├── mega-fintrade-market-engine-cpp
-├── mega-fintrade-backend-java
-└── mega-fintrade-risk-monitor-dotnet
-```
-
-Recommended local folder layout:
-
-```text
-mega-fintrade/
-```
-
-The four platform projects should be cloned into the same parent folder as this orchestration project.
+1. Checking local prerequisites.
+2. Loading local configuration.
+3. Running Python market data ingestion.
+4. Moving raw market data into the C++ market engine.
+5. Building and running the C++ market engine.
+6. Moving C++ output files back into the Python quant engine.
+7. Running Python analytics.
+8. Moving final CSV outputs into the Java backend.
+9. Triggering Java backend import APIs.
+10. Triggering .NET risk monitor refresh APIs.
+11. Printing final service and dashboard URLs.
 
 ---
 
-## Current Status
+## Recommended Local Repository Layout
 
-Current phase:
+The orchestration project expects the platform repositories to sit beside each other under one parent folder.
 
-```text
-Phase 1 — Project Setup
-```
+Recommended structure:
 
-Current completed steps:
+    mega-fintrade/
+    ├── mega-fintrade-orchestration
+    ├── mega-fintrade-quant-engine
+    ├── mega-fintrade-market-engine-cpp
+    ├── mega-fintrade-backend-java
+    └── mega-fintrade-risk-monitor-dotnet
 
-```text
-1.1 Create GitHub repo and clone locally
-1.2 Add root README.md
-```
-
-Upcoming steps:
-
-```text
-1.3 Add .gitignore
-1.4 Add LICENSE
-1.5 Create scripts, config, and docs folders
-```
+This layout allows the orchestration scripts to use simple relative paths.
 
 ---
 
-## Project 0 Build Plan
+## Expected Data Flow
 
-### Phase 1 — Project Setup
+The platform is designed around CSV and API contracts between services.
 
-| Step | Task | Purpose |
+High-level file movement:
+
+| From | To | Purpose |
 |---|---|---|
-| 1.1 | Create `mega-fintrade-orchestration` repo | Create the top-level orchestration project |
-| 1.2 | Add root `README.md` | Explain the project purpose |
-| 1.3 | Add `.gitignore` | Ignore local config and temporary files |
-| 1.4 | Add `LICENSE` | Add project license |
-| 1.5 | Create `scripts/`, `config/`, and `docs/` folders | Prepare project structure |
-
-### Phase 2 — Configuration
-
-| Step | Task | Purpose |
-|---|---|---|
-| 2.1 | Add `config/pipeline.env.example` | Store example repo paths and URLs |
-| 2.2 | Support local `config/pipeline.env` | Allow user-specific local settings |
-| 2.3 | Add repo path config | Point to the four existing repos |
-| 2.4 | Add backend and monitor URLs | Store Java backend and .NET monitor URLs |
-| 2.5 | Add C++ mode config | Let user choose C++ execution mode |
-| 2.6 | Add future AI config placeholder | Reserve optional Project 5 settings |
-
-### Phase 3 — Prerequisite Check Script
-
-| Step | Task | Purpose |
-|---|---|---|
-| 3.1 | Add `scripts/check-prerequisites.sh` | Check local environment before running |
-| 3.2 | Check required repo folders | Confirm all platform repos exist |
-| 3.3 | Check Python | Required by the quant engine |
-| 3.4 | Check CMake | Required by the C++ market engine |
-| 3.5 | Check Docker | Required by local services |
-| 3.6 | Check Java backend URL | Confirm backend is running |
-| 3.7 | Check .NET monitor URL | Confirm risk monitor is running |
-| 3.8 | Skip AI check when disabled | Keep Project 5 optional |
-
-### Phase 4 — Full Pipeline Script
-
-| Step | Task | Purpose |
-|---|---|---|
-| 4.1 | Add `scripts/run-full-pipeline.sh` | Main one-command runner |
-| 4.2 | Run Python ingestion | Generate raw market data |
-| 4.3 | Copy raw data to C++ engine | Feed C++ engine |
-| 4.4 | Build C++ engine | Compile market engine |
-| 4.5 | Run C++ engine | Generate cleaned data and daily returns |
-| 4.6 | Copy C++ outputs back to Python | Feed Python analytics |
-| 4.7 | Run Python quant pipeline | Generate backend import files |
-| 4.8 | Copy Python outputs to Java backend | Prepare Java import |
-| 4.9 | Trigger Java backend import | Import generated CSVs |
-| 4.10 | Trigger .NET monitor run | Refresh dashboard data |
-| 4.11 | Optionally trigger AI advisor later | Future Project 5 hook |
-| 4.12 | Print final URLs | Show user where to check results |
-
-### Phase 5 — Cleanup Script
-
-| Step | Task | Purpose |
-|---|---|---|
-| 5.1 | Add `scripts/clean-generated-data.sh` | Clean generated files safely |
-| 5.2 | Clean Python raw/output files | Remove generated Python files |
-| 5.3 | Clean C++ input/output/log files | Remove generated C++ files |
-| 5.4 | Clean Java input files | Remove copied import files |
-| 5.5 | Preserve sample/source files | Avoid deleting important files |
-
-### Phase 6 — Documentation
-
-| Step | Task | Purpose |
-|---|---|---|
-| 6.1 | Add `docs/normal-routine.md` | Simple daily usage guide |
-| 6.2 | Add `docs/pipeline-data-flow.md` | Explain file movement |
-| 6.3 | Add `docs/troubleshooting.md` | Explain common errors |
-| 6.4 | Update `README.md` | Main public manual |
-| 6.5 | Document future Project 5 hook | Explain optional AI integration |
-
-### Phase 7 — Final Test and Delivery
-
-| Step | Task | Purpose |
-|---|---|---|
-| 7.1 | Test prerequisite script | Confirm setup check works |
-| 7.2 | Test full pipeline script | Confirm end-to-end data flow works |
-| 7.3 | Test Java backend import | Confirm CSV import works |
-| 7.4 | Test .NET monitor refresh | Confirm monitor sees updated backend |
-| 7.5 | Open dashboard | Confirm final result is visible |
-| 7.6 | Commit and push | Finish Project 0 |
+| Python Quant Engine | C++ Market Engine | Sends raw market data for cleaning and processing |
+| C++ Market Engine | Python Quant Engine | Returns cleaned market data and daily returns |
+| Python Quant Engine | Java Backend | Sends final analytics outputs for backend import |
+| Java Backend | .NET Risk Monitor | Provides portfolio and risk data through REST APIs |
+| .NET Risk Monitor | Dashboard | Displays risk status and monitoring results |
 
 ---
 
-## Future Project 5 AI Advisor
+## Important Output Files
 
-Project 5 is planned as an optional future AI advisor component.
+The platform workflow depends on a consistent set of generated CSV files.
 
-Project 0 should reserve configuration for Project 5, but AI must stay disabled by default.
+Common files include:
 
-Example future settings:
+| File | Produced By | Used By |
+|---|---|---|
+| `raw_market_data.csv` | Python Quant Engine | C++ Market Engine |
+| `cleaned_market_data.csv` | C++ Market Engine | Python Quant Engine |
+| `daily_returns.csv` | C++ Market Engine | Python Quant Engine |
+| `backtest_results.csv` | Python Quant Engine | Java Backend |
+| `risk_metrics.csv` | Python Quant Engine | Java Backend |
+| `strategy_signals.csv` | Python Quant Engine | Java Backend |
+| `portfolio_equity_curve.csv` | Python Quant Engine | Java Backend |
 
-```text
-AI_ADVISOR_ENABLED=false
-AI_ADVISOR_URL=http://localhost:7005
-```
+The orchestration scripts are responsible for moving these files to the correct locations during the local pipeline run.
 
-When AI is disabled, Project 0 skips all AI-related steps.
+---
 
-When AI is enabled later, Project 0 can trigger the Project 5 AI advisor after the core Projects 1–4 pipeline is complete.
+## Planned Capabilities
+
+The orchestration project is intended to provide the following capabilities.
+
+### Configuration
+
+| Capability | Purpose |
+|---|---|
+| Example environment file | Provides a template for local repository paths and service URLs |
+| Local environment file | Allows each developer to use their own machine-specific paths |
+| Backend URL configuration | Stores the Java backend API base URL |
+| Risk monitor URL configuration | Stores the .NET risk monitor base URL |
+| C++ mode configuration | Allows the user to select the C++ engine run mode |
+| Optional AI configuration placeholder | Reserves future support for an AI advisor service |
+
+### Prerequisite Checking
+
+| Capability | Purpose |
+|---|---|
+| Repository folder check | Confirms all required platform repositories exist locally |
+| Python check | Confirms the quant engine can run |
+| CMake check | Confirms the C++ market engine can build |
+| Docker check | Confirms local containerized services can run |
+| Java backend health check | Confirms the backend API is reachable |
+| .NET monitor health check | Confirms the risk monitor API is reachable |
+| Optional AI check | Skips AI validation unless AI support is enabled |
+
+### Full Pipeline Execution
+
+| Capability | Purpose |
+|---|---|
+| Run Python ingestion | Generates raw market data |
+| Copy raw data to C++ | Feeds the market engine |
+| Build C++ engine | Compiles the market engine |
+| Run C++ engine | Produces cleaned data and daily returns |
+| Copy C++ outputs to Python | Feeds the analytics pipeline |
+| Run Python analytics | Produces backend import files |
+| Copy final CSV files to Java backend | Prepares backend ingestion |
+| Trigger backend import | Imports generated CSV files |
+| Trigger monitor refresh | Updates risk monitor data |
+| Print final URLs | Shows the user where to check results |
+
+### Cleanup
+
+| Capability | Purpose |
+|---|---|
+| Clean generated Python files | Removes generated quant files |
+| Clean generated C++ files | Removes generated market engine outputs |
+| Clean copied backend input files | Removes copied import files |
+| Preserve source and sample files | Prevents accidental deletion of important files |
+
+### Documentation
+
+| Document | Purpose |
+|---|---|
+| `docs/normal-routine.md` | Explains the standard local usage routine |
+| `docs/pipeline-data-flow.md` | Explains how data moves across projects |
+| `docs/troubleshooting.md` | Explains common local setup and runtime issues |
+
+---
+
+## Configuration Model
+
+This project uses environment-style configuration files.
+
+The public example file should be:
+
+    config/pipeline.env.example
+
+The local private file should be:
+
+    config/pipeline.env
+
+The local file should not be committed to Git.
+
+Example configuration values:
+
+    BACKEND_JAVA_DIR="../mega-fintrade-backend-java"
+    QUANT_ENGINE_DIR="../mega-fintrade-quant-engine"
+    MARKET_ENGINE_CPP_DIR="../mega-fintrade-market-engine-cpp"
+    RISK_MONITOR_DOTNET_DIR="../mega-fintrade-risk-monitor-dotnet"
+
+    JAVA_BACKEND_URL="http://localhost:8080"
+    RISK_MONITOR_URL="http://localhost:5189"
+
+    CPP_MODE="single"
+
+    AI_ADVISOR_ENABLED="false"
+    AI_ADVISOR_URL="http://localhost:7005"
+
+The AI advisor settings are reserved for future expansion and should remain disabled by default.
 
 ---
 
 ## Normal Usage Goal
 
-The final goal is that the user can run:
+The final intended usage is:
 
-```bash
-./scripts/run-full-pipeline.sh
-```
+    ./scripts/run-full-pipeline.sh
 
-Then open the dashboard:
+After the pipeline completes, the user should be able to open the local dashboard.
 
-```text
-http://localhost:5189/dashboard
-```
+Default dashboard URL:
 
-At the current stage, this script does not exist yet. It will be added in Phase 4.
+    http://localhost:5189/dashboard
+
+The exact URL may depend on the local .NET risk monitor configuration.
 
 ---
 
-## Technology Stack Covered
+## Technology Stack
 
-This orchestration project connects a multi-language platform:
+This orchestration project connects a multi-language platform.
 
 | Area | Technology |
 |---|---|
 | Orchestration | Bash |
-| Configuration | `.env` files |
+| Configuration | Environment files |
 | Quant engine | Python |
 | Market engine | C++ and CMake |
 | Backend ETL/API | Java, Spring Boot, Spring Batch |
@@ -260,21 +255,41 @@ This orchestration project connects a multi-language platform:
 
 ---
 
-## Repository Type
+## Repository Contents
 
-This is a control repository.
+Expected repository structure:
 
-It should contain:
+    mega-fintrade-orchestration/
+    ├── README.md
+    ├── LICENSE
+    ├── .gitignore
+    ├── scripts/
+    ├── config/
+    └── docs/
 
-```text
-README.md
-LICENSE
-.gitignore
-scripts/
-config/
-docs/
-```
+This repository should only contain orchestration-related files.
 
-It should not contain the full source code of the other projects.
+It should not contain copied source code from the Python, C++, Java, or .NET repositories.
 
-Each platform project remains in its own repository.
+---
+
+## Future AI Advisor Support
+
+The platform may later include an optional AI advisor service.
+
+That future service should be disabled by default in this orchestration project.
+
+Suggested future configuration:
+
+    AI_ADVISOR_ENABLED="false"
+    AI_ADVISOR_URL="http://localhost:7005"
+
+When disabled, all AI-related steps should be skipped.
+
+When enabled later, the orchestration script can trigger the AI advisor after the core Projects 1–4 pipeline finishes successfully.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
