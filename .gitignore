@@ -1,0 +1,62 @@
+# Local environment configuration
+config/pipeline.env
+*.env
+*.env.local
+
+# macOS system files
+.DS_Store
+
+# VS Code local settings
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Generated data
+data/
+generated/
+
+# Script output files
+*.out
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Node / frontend temporary files
+node_modules/
+.next/
+dist/
+build/
+
+# .NET temporary files
+bin/
+obj/
+
+# Java / Maven temporary files
+target/
+
+# C++ / CMake build output
+cmake-build-*/
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# Docker local files
+docker-compose.override.yml
+
+# Local IDE files
+.idea/
+*.iml
+
+# Local backup files
+*.bak
+*.backup
