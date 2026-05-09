@@ -63,6 +63,7 @@ This orchestration project handles:
     10. Triggering Java backend import APIs
     11. Triggering .NET risk monitor refresh APIs
     12. Printing the final dashboard URL
+    13. Supporting automatic hourly refresh through the one-click platform runner
 
 No bare-metal Python, CMake, Java, Maven, .NET, or dotnet run command is required by the orchestration scripts. The connected projects are expected to run through Docker Compose.
 
@@ -94,33 +95,66 @@ From the orchestration project root, prepare the local configuration:
     cp config/pipeline.env.example config/pipeline.env
     code config/pipeline.env
 
-### Start Option A: Start long-running Docker services:
+Make all scripts executable:
 
-    chmod +x scripts/start-services.sh
+    chmod +x scripts/*.sh
+
+---
+
+### Option A — Manual Refresh
+
+Use this option when you want to control when new data is pulled, processed, imported, and monitored.
+
+Start long-running Docker services:
+
     ./scripts/start-services.sh
 
 Check prerequisites:
 
-    chmod +x scripts/check-prerequisites.sh
     ./scripts/check-prerequisites.sh
 
-Run the full Docker pipeline:
+Run one full Docker pipeline refresh:
 
-    chmod +x scripts/run-full-pipeline.sh
     ./scripts/run-full-pipeline.sh
 
 Open the dashboard:
 
     http://localhost:5189/dashboard
 
-### Start Option B: For the normal one-command routine after configuration is ready:
+When finished, stop long-running Docker services:
 
-    chmod +x scripts/run-platform.sh
+    ./scripts/stop-services.sh
+
+---
+
+### Option B — One-Click Periodic Refresh
+
+Use this option for the normal one-command local platform routine.
+
+Run:
+
     ./scripts/run-platform.sh
 
-### To stop long-running Docker services:
+This command:
 
-    chmod +x scripts/stop-services.sh
+    1. Starts long-running Docker services
+    2. Checks prerequisites
+    3. Runs the full Docker pipeline immediately
+    4. Refreshes the full pipeline every 1 hour
+    5. Keeps the dashboard available
+
+Open the dashboard:
+
+    http://localhost:5189/dashboard
+
+The one-click routine keeps running in the terminal.
+
+To stop the automatic refresh loop, press:
+
+    Control + C
+
+After stopping the loop, stop long-running Docker services:
+
     ./scripts/stop-services.sh
 
 ---
@@ -171,10 +205,10 @@ Project 5 AI advisor support is disabled by default:
 | `scripts/validate-config.sh` | Validates required configuration values |
 | `scripts/start-services.sh` | Starts long-running Docker services |
 | `scripts/check-prerequisites.sh` | Checks Docker, folders, Compose files, services, and reachable endpoints |
-| `scripts/run-full-pipeline.sh` | Runs the full Docker-based platform pipeline |
+| `scripts/run-full-pipeline.sh` | Runs one manual full Docker-based platform pipeline refresh |
 | `scripts/clean-generated-data.sh` | Removes generated pipeline files safely |
 | `scripts/stop-services.sh` | Stops long-running Docker services |
-| `scripts/run-platform.sh` | Runs the normal start, check, pipeline routine |
+| `scripts/run-platform.sh` | Starts services, checks prerequisites, runs the pipeline immediately, and refreshes every 1 hour |
 
 ---
 
