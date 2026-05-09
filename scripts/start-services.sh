@@ -33,28 +33,6 @@ resolve_path() {
   fi
 }
 
-check_directory() {
-  local name="$1"
-  local path="$2"
-
-  if [ -d "${path}" ]; then
-    pass "${name} directory found: ${path}"
-  else
-    fail "${name} directory not found: ${path}"
-  fi
-}
-
-check_command() {
-  local command_name="$1"
-  local display_name="$2"
-
-  if command -v "${command_name}" >/dev/null 2>&1; then
-    pass "${display_name} found: $(command -v "${command_name}")"
-  else
-    fail "${display_name} is not installed or not available in PATH."
-  fi
-}
-
 find_compose_file() {
   local repo_dir="$1"
 
@@ -81,38 +59,54 @@ find_compose_file() {
   return 1
 }
 
+check_command() {
+  local command_name="$1"
+  local display_name="$2"
+
+  if command -v "${command_name}" >/dev/null 2>&1; then
+    pass "${display_name} found: $(command -v "${command_name}")"
+  else
+    fail "${display_name} is not installed or not available in PATH."
+  fi
+}
+
+check_directory() {
+  local name="$1"
+  local path="$2"
+
+  if [ -d "${path}" ]; then
+    pass "${name} directory found: ${path}"
+  else
+    fail "${name} directory not found: ${path}"
+  fi
+}
+
 is_url_reachable() {
   local url="$1"
 
   curl --silent --fail --max-time 5 "${url}" >/dev/null 2>&1
 }
 
-wait_for_any_url() {
+wait_for_url() {
   local name="$1"
-  local max_attempts="$2"
-  shift 2
+  local url="$2"
+  local attempts="${DOCKER_SERVICE_WAIT_ATTEMPTS}"
 
   echo "Waiting for ${name}."
+  echo "Health URL:"
+  echo "  ${url}"
 
-  for attempt in $(seq 1 "${max_attempts}"); do
-    for url in "$@"; do
-      if is_url_reachable "${url}"; then
-        pass "${name} is reachable: ${url}"
-        return 0
-      fi
-    done
+  for attempt in $(seq 1 "${attempts}"); do
+    if is_url_reachable "${url}"; then
+      pass "${name} is reachable: ${url}"
+      return 0
+    fi
 
-    echo "Attempt ${attempt}/${max_attempts}: ${name} not ready yet."
+    echo "Attempt ${attempt}/${attempts}: ${name} not ready yet."
     sleep 2
   done
 
-  echo ""
-  echo "Checked URLs:"
-  for url in "$@"; do
-    echo "  ${url}"
-  done
-
-  fail "${name} did not become reachable."
+  fail "${name} did not become reachable after ${attempts} attempts: ${url}"
 }
 
 start_compose_service() {
@@ -124,7 +118,7 @@ start_compose_service() {
 
   local compose_file
   if ! compose_file="$(find_compose_file "${repo_dir}")"; then
-    fail "No Docker Compose file found for ${name} in ${repo_dir}"
+    fail "${name} Docker Compose file not found in ${repo_dir}"
   fi
 
   echo "Starting ${name} with Docker Compose."
@@ -143,6 +137,9 @@ start_compose_service() {
 
 BACKEND_JAVA_ABS_DIR="$(resolve_path "${BACKEND_JAVA_DIR}")"
 RISK_MONITOR_DOTNET_ABS_DIR="$(resolve_path "${RISK_MONITOR_DOTNET_DIR}")"
+
+JAVA_BACKEND_HEALTH_URL="${JAVA_BACKEND_URL}${JAVA_BACKEND_HEALTH_ENDPOINT}"
+RISK_MONITOR_HEALTH_URL="${RISK_MONITOR_URL}${RISK_MONITOR_HEALTH_ENDPOINT}"
 
 print_section "Mega Fintrade Docker service startup"
 
@@ -167,34 +164,26 @@ fi
 print_section "Starting Java backend through Docker"
 
 start_compose_service "Java backend" "${BACKEND_JAVA_ABS_DIR}" "${BACKEND_JAVA_DOCKER_SERVICE}"
-
-wait_for_any_url \
-  "Java backend" \
-  "${DOCKER_SERVICE_WAIT_ATTEMPTS}" \
-  "${JAVA_BACKEND_URL}${JAVA_BACKEND_HEALTH_ENDPOINT}" \
-  "${JAVA_BACKEND_URL}/api/reports/summary" \
-  "${JAVA_BACKEND_URL}/api/import/audit"
+wait_for_url "Java backend" "${JAVA_BACKEND_HEALTH_URL}"
 
 print_section "Starting .NET risk monitor through Docker"
 
 start_compose_service ".NET risk monitor" "${RISK_MONITOR_DOTNET_ABS_DIR}" "${RISK_MONITOR_DOTNET_DOCKER_SERVICE}"
-
-wait_for_any_url \
-  ".NET risk monitor" \
-  "${DOCKER_SERVICE_WAIT_ATTEMPTS}" \
-  "${RISK_MONITOR_URL}${RISK_MONITOR_HEALTH_ENDPOINT}" \
-  "${RISK_MONITOR_URL}${RISK_MONITOR_DASHBOARD_PATH}" \
-  "${RISK_MONITOR_URL}"
+wait_for_url ".NET risk monitor" "${RISK_MONITOR_HEALTH_URL}"
 
 print_section "Docker service startup completed"
 
-echo "Required Docker services are running or reachable."
+echo "Required Docker services are running and healthy."
 echo ""
 echo "Java backend:"
 echo "  ${JAVA_BACKEND_URL}"
+echo "Health:"
+echo "  ${JAVA_BACKEND_HEALTH_URL}"
 echo ""
 echo ".NET risk monitor:"
 echo "  ${RISK_MONITOR_URL}"
+echo "Health:"
+echo "  ${RISK_MONITOR_HEALTH_URL}"
 echo ""
 echo "Dashboard:"
 echo "  ${RISK_MONITOR_URL}${RISK_MONITOR_DASHBOARD_PATH}"

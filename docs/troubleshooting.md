@@ -20,7 +20,7 @@ Fix:
     cp config/pipeline.env.example config/pipeline.env
     code config/pipeline.env
 
-Then confirm the repository paths, Docker Compose service names, and URLs match your local machine.
+Then confirm the repository paths, Docker Compose service names, URLs, and health endpoints match your local machine.
 
 ---
 
@@ -147,49 +147,65 @@ Common expected values:
 
 ---
 
-## Problem 7 — Java Backend Is Not Reachable
+## Problem 7 — Java Backend Health Endpoint Is Not Reachable
 
 Error example:
 
-    Java backend is not reachable
+    Java backend did not become reachable after 60 attempts: http://localhost:8080/api/health
 
 Cause:
 
-    The Java backend Docker service is not running, is still starting, or is using a different port.
+    The Java backend Docker service is not running, is still starting, is using a different port, or the health endpoint is not available in the running image.
 
-Expected default URL:
+Expected default service URL:
 
     http://localhost:8080
 
+Expected health endpoint:
+
+    http://localhost:8080/api/health
+
 Fix:
 
     ./scripts/start-services.sh
 
 Then check:
 
-    curl http://localhost:8080/api/reports/summary
+    curl http://localhost:8080/api/health
 
-A dedicated Project 1 health endpoint should be added later.
+Expected response should include:
 
-Recommended future endpoint:
+    "status":"UP"
+    "service":"mega-fintrade-backend-java"
 
-    /api/health
+If the endpoint is still not reachable:
+
+    1. Confirm config/pipeline.env has JAVA_BACKEND_HEALTH_ENDPOINT="/api/health".
+    2. Confirm Project 1 contains the HealthController.
+    3. Rebuild the Java backend Docker image.
+    4. Check backend logs:
+
+        docker logs mega-fintrade-backend-java --tail 120
 
 ---
 
-## Problem 8 — .NET Risk Monitor Is Not Reachable
+## Problem 8 — .NET Risk Monitor Health Endpoint Is Not Reachable
 
 Error example:
 
-    .NET risk monitor is not reachable
+    .NET risk monitor did not become reachable after 60 attempts: http://localhost:5189/health
 
 Cause:
 
-    The .NET risk monitor Docker service is not running, is still starting, or is using a different port.
+    The .NET risk monitor Docker service is not running, is still starting, is using a different port, or the health endpoint is not available in the running image.
 
-Expected default URL:
+Expected default service URL:
 
     http://localhost:5189
+
+Expected health endpoint:
+
+    http://localhost:5189/health
 
 Fix:
 
@@ -197,13 +213,21 @@ Fix:
 
 Then check:
 
-    curl http://localhost:5189/api/monitor/status
+    curl http://localhost:5189/health
 
-A dedicated Project 4 health endpoint should be added later.
+Expected response should include:
 
-Recommended future endpoint:
+    "status":"UP"
+    "service":"mega-fintrade-risk-monitor-dotnet"
 
-    /health
+If the endpoint is still not reachable:
+
+    1. Confirm config/pipeline.env has RISK_MONITOR_HEALTH_ENDPOINT="/health".
+    2. Confirm Project 4 contains the HealthController.
+    3. Rebuild the .NET risk monitor Docker image.
+    4. Check monitor logs:
+
+        docker logs mega-fintrade-risk-monitor --tail 120
 
 ---
 
@@ -233,7 +257,9 @@ Fix:
 
         ./data:/app/data
 
-    3. Run the full pipeline again.
+    3. Run the full pipeline again:
+
+        ./scripts/run-full-pipeline.sh
 
 ---
 
@@ -353,19 +379,36 @@ Fix:
 
     Confirm the correct monitor refresh endpoint and update config/pipeline.env if needed.
 
+Then test:
+
+    curl -X POST http://localhost:5189/api/monitor/run
+
 ---
 
 ## Problem 15 — Old ImportFailure or CsvRejectionsFound Alerts Still Show
 
 Cause:
 
-    Project 4 may keep historical active alerts even after a newer successful Java import.
+    Project 4 may have old active alerts saved from previous failed runs, or the alert reconciliation logic has not run after the latest successful import.
 
-Current expected improvement:
+Expected behavior:
 
-    Project 4 should resolve or filter old ImportFailure and CsvRejectionsFound alerts after the latest Java import becomes SUCCESS.
+    1. If the latest Java import is SUCCESS, old ImportFailure alerts should be resolved.
+    2. If the latest Java import is SUCCESS, old CsvRejectionsFound alerts should be resolved or ignored as stale.
+    3. Real portfolio risk alerts such as DrawdownBreach, LowSharpeRatio, and StaleEquityData may remain active.
 
-This is a Project 4 improvement, not a Project 0 pipeline failure.
+Fix:
+
+    Run the full pipeline and monitor refresh again:
+
+        ./scripts/run-full-pipeline.sh
+
+    Then check:
+
+        curl http://localhost:5189/api/alerts
+        curl http://localhost:5189/api/monitor/status
+
+If stale import/rejection alerts remain active, check Project 4 alert cleanup logic.
 
 ---
 
@@ -414,3 +457,25 @@ It should preserve:
 After cleanup, run the full pipeline again to regenerate the files:
 
     ./scripts/run-full-pipeline.sh
+
+---
+
+## Problem 18 — One-Click Periodic Runner Keeps the Terminal Busy
+
+Cause:
+
+    scripts/run-platform.sh starts the platform, runs the pipeline immediately, and then refreshes the pipeline every 1 hour.
+
+This is expected.
+
+Fix:
+
+    Leave the terminal open while you want automatic refresh.
+
+To stop the refresh loop, press:
+
+    Control + C
+
+Then stop long-running services:
+
+    ./scripts/stop-services.sh

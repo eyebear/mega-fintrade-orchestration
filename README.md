@@ -54,16 +54,17 @@ This orchestration project handles:
     1. Loading local configuration
     2. Validating Docker Compose service names
     3. Starting long-running Docker services
-    4. Running Python market data ingestion through Docker
-    5. Moving raw market data into the C++ market engine
-    6. Running the C++ market engine through Docker
-    7. Moving C++ output files back into the Python quant engine
-    8. Running Python analytics through Docker
-    9. Moving final CSV outputs into the Java backend
-    10. Triggering Java backend import APIs
-    11. Triggering .NET risk monitor refresh APIs
-    12. Printing the final dashboard URL
-    13. Supporting automatic hourly refresh through the one-click platform runner
+    4. Checking real service health endpoints
+    5. Running Python market data ingestion through Docker
+    6. Moving raw market data into the C++ market engine
+    7. Running the C++ market engine through Docker
+    8. Moving C++ output files back into the Python quant engine
+    9. Running Python analytics through Docker
+    10. Moving final CSV outputs into the Java backend
+    11. Triggering Java backend import APIs
+    12. Triggering .NET risk monitor refresh APIs
+    13. Printing the final dashboard URL
+    14. Supporting automatic hourly refresh through the one-click platform runner
 
 No bare-metal Python, CMake, Java, Maven, .NET, or dotnet run command is required by the orchestration scripts. The connected projects are expected to run through Docker Compose.
 
@@ -159,6 +160,25 @@ After stopping the loop, stop long-running Docker services:
 
 ---
 
+## Service Health Endpoints
+
+Project 0 uses real health endpoints to confirm that the long-running Docker services are ready.
+
+Project 1 Java backend health endpoint:
+
+    http://localhost:8080/api/health
+
+Project 4 .NET risk monitor health endpoint:
+
+    http://localhost:5189/health
+
+These endpoints are used by:
+
+    scripts/start-services.sh
+    scripts/check-prerequisites.sh
+
+---
+
 ## Configuration
 
 The public configuration template is:
@@ -183,6 +203,11 @@ Important service URL settings include:
     JAVA_BACKEND_URL="http://localhost:8080"
     RISK_MONITOR_URL="http://localhost:5189"
 
+Important health endpoint settings include:
+
+    JAVA_BACKEND_HEALTH_ENDPOINT="/api/health"
+    RISK_MONITOR_HEALTH_ENDPOINT="/health"
+
 Important Docker Compose service settings include:
 
     QUANT_ENGINE_PIPELINE_SERVICE="quant-engine-pipeline"
@@ -203,8 +228,8 @@ Project 5 AI advisor support is disabled by default:
 |---|---|
 | `scripts/load-config.sh` | Loads local pipeline configuration |
 | `scripts/validate-config.sh` | Validates required configuration values |
-| `scripts/start-services.sh` | Starts long-running Docker services |
-| `scripts/check-prerequisites.sh` | Checks Docker, folders, Compose files, services, and reachable endpoints |
+| `scripts/start-services.sh` | Starts long-running Docker services and waits for real health endpoints |
+| `scripts/check-prerequisites.sh` | Checks Docker, folders, Compose files, service names, and real health endpoints |
 | `scripts/run-full-pipeline.sh` | Runs one manual full Docker-based platform pipeline refresh |
 | `scripts/clean-generated-data.sh` | Removes generated pipeline files safely |
 | `scripts/stop-services.sh` | Stops long-running Docker services |
@@ -246,9 +271,9 @@ The platform currently works end-to-end through Docker orchestration.
 
 Planned service-quality improvements include:
 
-    1. Add a proper health endpoint to Project 1 Java backend.
-    2. Add a proper health endpoint to Project 4 .NET risk monitor.
-    3. Improve Project 4 alert cleanup so stale ImportFailure and CsvRejectionsFound alerts are resolved after a newer successful import.
+    1. Continue improving Project 4 alert lifecycle behavior.
+    2. Add richer symbol-level dashboard cards when Project 1 exposes symbol-level report metrics.
+    3. Add Project 5 AI advisor integration when the AI service is implemented.
 
 ---
 

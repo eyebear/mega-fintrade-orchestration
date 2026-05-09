@@ -128,24 +128,33 @@ is_url_reachable() {
   curl --silent --fail --max-time 5 "${url}" >/dev/null 2>&1
 }
 
-check_any_url_warning_only() {
+check_primary_url_with_fallback_warning() {
   local name="$1"
-  shift
+  local primary_url="$2"
+  shift 2
 
-  for url in "$@"; do
-    if is_url_reachable "${url}"; then
-      pass "${name} is reachable: ${url}"
+  if is_url_reachable "${primary_url}"; then
+    pass "${name} is reachable: ${primary_url}"
+    return 0
+  fi
+
+  warn "${name} primary health endpoint is not reachable: ${primary_url}"
+
+  for fallback_url in "$@"; do
+    if is_url_reachable "${fallback_url}"; then
+      warn "${name} fallback endpoint is reachable: ${fallback_url}"
+      warn "Primary health endpoint should be fixed, but prerequisite check will continue for now."
       return 0
     fi
   done
 
-  warn "${name} was not reachable through the configured check URLs."
   echo "Checked URLs:"
-  for url in "$@"; do
-    echo "  ${url}"
+  echo "  ${primary_url}"
+  for fallback_url in "$@"; do
+    echo "  ${fallback_url}"
   done
-  echo ""
-  echo "Continuing because dedicated health endpoints will be added later."
+
+  fail "${name} is not reachable through primary health endpoint or fallback endpoints."
 }
 
 QUANT_ENGINE_ABS_DIR="$(resolve_path "${QUANT_ENGINE_DIR}")"
@@ -201,7 +210,7 @@ check_compose_service ".NET risk monitor service" "${RISK_MONITOR_DOTNET_ABS_DIR
 
 print_section "Checking Java backend service"
 
-check_any_url_warning_only \
+check_primary_url_with_fallback_warning \
   "Java backend" \
   "${JAVA_BACKEND_URL}${JAVA_BACKEND_HEALTH_ENDPOINT}" \
   "${JAVA_BACKEND_URL}/api/reports/summary" \
@@ -209,7 +218,7 @@ check_any_url_warning_only \
 
 print_section "Checking .NET risk monitor service"
 
-check_any_url_warning_only \
+check_primary_url_with_fallback_warning \
   ".NET risk monitor" \
   "${RISK_MONITOR_URL}${RISK_MONITOR_HEALTH_ENDPOINT}" \
   "${RISK_MONITOR_URL}/api/monitor/status" \
@@ -219,7 +228,10 @@ check_any_url_warning_only \
 print_section "Checking optional AI advisor service"
 
 if [ "${AI_ADVISOR_ENABLED}" = "true" ]; then
-  check_any_url_warning_only "AI advisor" "${AI_ADVISOR_URL}${AI_ADVISOR_REFRESH_ENDPOINT}"
+  check_primary_url_with_fallback_warning \
+    "AI advisor" \
+    "${AI_ADVISOR_URL}${AI_ADVISOR_REFRESH_ENDPOINT}" \
+    "${AI_ADVISOR_URL}"
 else
   pass "AI advisor check skipped because AI_ADVISOR_ENABLED=false"
 fi

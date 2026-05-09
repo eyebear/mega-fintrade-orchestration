@@ -73,6 +73,11 @@ Confirm the local service URLs:
     JAVA_BACKEND_URL="http://localhost:8080"
     RISK_MONITOR_URL="http://localhost:5189"
 
+Confirm the real health endpoints:
+
+    JAVA_BACKEND_HEALTH_ENDPOINT="/api/health"
+    RISK_MONITOR_HEALTH_ENDPOINT="/health"
+
 Confirm the Docker Compose service names match the connected repositories:
 
     QUANT_ENGINE_PIPELINE_SERVICE="quant-engine-pipeline"
@@ -103,9 +108,17 @@ The Java backend should become available at:
 
     http://localhost:8080
 
+The Java backend health endpoint should become available at:
+
+    http://localhost:8080/api/health
+
 The .NET risk monitor should become available at:
 
     http://localhost:5189
+
+The .NET risk monitor health endpoint should become available at:
+
+    http://localhost:5189/health
 
 The dashboard should become available at:
 
@@ -127,15 +140,18 @@ This checks:
     3. Docker Compose plugin
     4. Docker Compose files
     5. Docker Compose service names
-    6. Java backend reachability
-    7. .NET risk monitor reachability
+    6. Java backend health endpoint
+    7. .NET risk monitor health endpoint
     8. Optional AI advisor behavior
 
-Until Project 1 and Project 4 have dedicated health endpoints, the check script may use fallback service URLs.
+The real service health endpoints are:
+
+    http://localhost:8080/api/health
+    http://localhost:5189/health
 
 ---
 
-## Step 4 — Run the Full Docker Pipeline
+## Step 4 — Run the Full Docker Pipeline Manually
 
 From the orchestration project root, run:
 
@@ -162,9 +178,9 @@ After the pipeline finishes, open the dashboard:
 
 ---
 
-## Step 5 — Normal One-Command Routine
+## Step 5 — Normal One-Click Periodic Routine
 
-After the local config is ready, the normal routine is:
+After the local config is ready, the normal one-click routine is:
 
     chmod +x scripts/run-platform.sh
     ./scripts/run-platform.sh
@@ -173,8 +189,19 @@ This runs:
 
     1. Service startup
     2. Prerequisite check
-    3. Full Docker pipeline
-    4. Final dashboard URL printout
+    3. Full Docker pipeline immediately
+    4. Automatic full pipeline refresh every 1 hour
+    5. Final dashboard URL printout after each refresh
+
+The one-click routine keeps running in the terminal.
+
+To stop the automatic refresh loop, press:
+
+    Control + C
+
+Then stop long-running Docker services:
+
+    ./scripts/stop-services.sh
 
 ---
 
@@ -206,15 +233,19 @@ This stops the Java backend Docker service and the .NET risk monitor Docker serv
 
 A successful full run should:
 
-    1. Generate raw market data in the Python quant engine.
-    2. Send raw market data to the C++ market engine.
-    3. Generate cleaned market data and daily returns.
-    4. Send C++ outputs back to the Python quant engine.
-    5. Generate final analytics output files.
-    6. Copy final CSV files into the Java backend input folder.
-    7. Trigger the Java backend import API.
-    8. Trigger the .NET monitor refresh endpoint.
-    9. Print the dashboard URL.
+    1. Start the Java backend Docker service.
+    2. Start the .NET risk monitor Docker service.
+    3. Confirm Java backend health at /api/health.
+    4. Confirm .NET risk monitor health at /health.
+    5. Generate raw market data in the Python quant engine.
+    6. Send raw market data to the C++ market engine.
+    7. Generate cleaned market data and daily returns.
+    8. Send C++ outputs back to the Python quant engine.
+    9. Generate final analytics output files.
+    10. Copy final CSV files into the Java backend input folder.
+    11. Trigger the Java backend import API.
+    12. Trigger the .NET monitor refresh endpoint.
+    13. Print the dashboard URL.
 
 The final dashboard URL is normally:
 

@@ -4,6 +4,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+LOG_DIR="${PROJECT_ROOT}/logs"
+CPP_MARKET_ENGINE_LOG_FILE="${LOG_DIR}/cpp-market-engine-run.log"
 
 source "${SCRIPT_DIR}/validate-config.sh"
 
@@ -121,30 +123,6 @@ docker_compose_build_service() {
   pass "${name} Docker build completed."
 }
 
-docker_compose_run_service_default() {
-  local name="$1"
-  local repo_dir="$2"
-  local service_name="$3"
-
-  local compose_file
-  if ! compose_file="$(find_compose_file "${repo_dir}")"; then
-    fail "No Docker Compose file found for ${name} in ${repo_dir}"
-  fi
-
-  echo "Running ${name} Docker service with default compose command."
-  echo "Compose file:"
-  echo "  ${compose_file}"
-  echo "Service:"
-  echo "  ${service_name}"
-
-  (
-    cd "${repo_dir}"
-    docker compose -f "${compose_file}" run --rm "${service_name}"
-  )
-
-  pass "${name} Docker run completed."
-}
-
 docker_compose_run_service_command() {
   local name="$1"
   local repo_dir="$2"
@@ -170,6 +148,44 @@ docker_compose_run_service_command() {
   )
 
   pass "${name} Docker command completed."
+}
+
+docker_compose_run_service_default_quiet() {
+  local name="$1"
+  local repo_dir="$2"
+  local service_name="$3"
+  local log_file="$4"
+
+  local compose_file
+  if ! compose_file="$(find_compose_file "${repo_dir}")"; then
+    fail "No Docker Compose file found for ${name} in ${repo_dir}"
+  fi
+
+  mkdir -p "$(dirname "${log_file}")"
+
+  echo "Running ${name} Docker service with default compose command."
+  echo "Compose file:"
+  echo "  ${compose_file}"
+  echo "Service:"
+  echo "  ${service_name}"
+  echo "Terminal output:"
+  echo "  Suppressed."
+  echo "Log file:"
+  echo "  ${log_file}"
+
+  if (
+    cd "${repo_dir}"
+    docker compose -f "${compose_file}" run --rm "${service_name}"
+  ) > "${log_file}" 2>&1; then
+    pass "${name} Docker run completed."
+    echo "Full ${name} log saved to:"
+    echo "  ${log_file}"
+  else
+    echo ""
+    echo "${name} failed. Last 80 log lines:"
+    tail -n 80 "${log_file}" || true
+    fail "${name} Docker run failed. Full log: ${log_file}"
+  fi
 }
 
 post_url() {
@@ -293,10 +309,11 @@ docker_compose_build_service \
 
 print_section "Step 4 — Run C++ market engine through Docker"
 
-docker_compose_run_service_default \
+docker_compose_run_service_default_quiet \
   "C++ market engine" \
   "${MARKET_ENGINE_CPP_ABS_DIR}" \
-  "${CPP_SELECTED_SERVICE}"
+  "${CPP_SELECTED_SERVICE}" \
+  "${CPP_MARKET_ENGINE_LOG_FILE}"
 
 check_file "Cleaned market data output" "${CPP_CLEANED_MARKET_DATA_FILE}"
 check_file "Daily returns output" "${CPP_DAILY_RETURNS_FILE}"
@@ -355,3 +372,6 @@ echo "  ${JAVA_BACKTEST_RESULTS_FILE}"
 echo "  ${JAVA_RISK_METRICS_FILE}"
 echo "  ${JAVA_STRATEGY_SIGNALS_FILE}"
 echo "  ${JAVA_PORTFOLIO_EQUITY_CURVE_FILE}"
+echo ""
+echo "C++ market engine log:"
+echo "  ${CPP_MARKET_ENGINE_LOG_FILE}"
