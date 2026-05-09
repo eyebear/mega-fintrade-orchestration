@@ -113,11 +113,11 @@ Open the dashboard:
 
     http://localhost:5189/dashboard
 
-For the normal one-command routine after configuration is ready:
-
+### For the normal one-command routine after configuration is ready:
+```
     chmod +x scripts/run-platform.sh
     ./scripts/run-platform.sh
-
+```
 To stop long-running Docker services:
 
     chmod +x scripts/stop-services.sh
