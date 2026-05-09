@@ -94,7 +94,7 @@ From the orchestration project root, prepare the local configuration:
     cp config/pipeline.env.example config/pipeline.env
     code config/pipeline.env
 
-Start long-running Docker services:
+### Start Option A: Start long-running Docker services:
 
     chmod +x scripts/start-services.sh
     ./scripts/start-services.sh
@@ -113,12 +113,12 @@ Open the dashboard:
 
     http://localhost:5189/dashboard
 
-### For the normal one-command routine after configuration is ready:
-```
+### Start Option B: For the normal one-command routine after configuration is ready:
+
     chmod +x scripts/run-platform.sh
     ./scripts/run-platform.sh
-```
-To stop long-running Docker services:
+
+### To stop long-running Docker services:
 
     chmod +x scripts/stop-services.sh
     ./scripts/stop-services.sh
